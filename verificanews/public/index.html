@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VerificaNews - Portal de Checagem com IA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        status: {
+                            verdadeiro: '#10B981',
+                            falso: '#EF4444',
+                            parcial: '#F59E0B',
+                            semprovas: '#6B7280'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 9999px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetFilters()">
+                <div class="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-500/30">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
+                        VerificaNews
+                    </span>
+                    <span class="hidden sm:inline-block text-xs text-slate-500 dark:text-slate-400 font-medium ml-2 border-l border-slate-300 dark:border-slate-700 pl-2">
+                        Inteligência & Verdade
+                    </span>
+                </div>
+            </div>
+
+            <!-- Actions Right -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="runAutoCollector()" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium text-sm transition">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-500" id="refreshIcon"></i>
+                    <span class="hidden md:inline">Sincronizar Feed</span>
+                </button>
+
+                <button onclick="toggleModal('submitModal', true)" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm hover:shadow-blue-500/20 active:scale-95">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>Checar com IA</span>
+                </button>
+
+                <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Alternar tema">
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Hero Section -->
+        <section class="text-center max-w-3xl mx-auto space-y-6 pt-4">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-semibold">
+                <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+                <span>Triagem Inteligente powered by Gemini IA</span>
+            </div>
+            
+            <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                Descubra a <span class="bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">Verdade</span> sobre qualquer notícia.
+            </h1>
+            
+            <p class="text-base sm:text-lg text-slate-600 dark:text-slate-400">
+                Pesquise em nossa base de dados ou envie um rumor para checagem em tempo real com inteligência artificial.
+            </p>
+
+            <!-- Search Bar -->
+            <div class="relative max-w-2xl mx-auto">
+                <div class="relative flex items-center">
+                    <i data-lucide="search" class="absolute left-4 w-5 h-5 text-slate-400"></i>
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        oninput="handleFilterChange()"
+                        placeholder="Pesquise notícias, boatos ou palavras-chave..." 
+                        class="w-full pl-11 pr-24 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xl shadow-slate-200/50 dark:shadow-none transition"
+                    >
+                    <button 
+                        onclick="clearSearch()"
+                        id="clearSearchBtn"
+                        class="hidden absolute right-4 text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg"
+                    >
+                        Limpar
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Counter Section -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <p class="text-2xl font-bold text-emerald-500" id="countVerdadeiro">0</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Verdadeiros</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <p class="text-2xl font-bold text-rose-500" id="countFalso">0</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Falsos</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <p class="text-2xl font-bold text-amber-500" id="countParcial">0</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Parciais</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+                <p class="text-2xl font-bold text-slate-500 dark:text-slate-400" id="countSemprovas">0</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Sem Provas</p>
+            </div>
+        </section>
+
+        <!-- Filter Controls -->
+        <section class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+            <div class="flex items-center space-x-1 sm:space-x-2 overflow-x-auto custom-scrollbar pb-2 sm:pb-0 w-full sm:w-auto">
+                <button onclick="setCategory('Todos')" class="category-btn active px-4 py-2 rounded-xl text-sm font-medium transition bg-blue-600 text-white" data-category="Todos">Todos</button>
+                <button onclick="setCategory('Política')" class="category-btn px-4 py-2 rounded-xl text-sm font-medium transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-category="Política">Política</button>
+                <button onclick="setCategory('Saúde')" class="category-btn px-4 py-2 rounded-xl text-sm font-medium transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-category="Saúde">Saúde</button>
+                <button onclick="setCategory('Ciência')" class="category-btn px-4 py-2 rounded-xl text-sm font-medium transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-category="Ciência">Ciência</button>
+                <button onclick="setCategory('Geral')" class="category-btn px-4 py-2 rounded-xl text-sm font-medium transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-category="Geral">Geral</button>
+            </div>
+
+            <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                <label for="statusFilter" class="text-xs font-semibold text-slate-500 uppercase">Status:</label>
+                <select id="statusFilter" onchange="handleFilterChange()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-sm">
+                    <option value="Todos">Todos os Status</option>
+                    <option value="Verdadeiro">Verdadeiro</option>
+                    <option value="Falso">Falso</option>
+                    <option value="Parcial">Parcial</option>
+                    <option value="Sem Provas">Sem Provas</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Claims Grid -->
+        <section id="claimsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards gerados dinamicamente -->
+        </section>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16 space-y-4">
+            <div class="w-16 h-16 mx-auto bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center">
+                <i data-lucide="file-question" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200">Nenhum fato encontrado</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Tente ajustar seus termos de pesquisa.</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center sm:flex sm:justify-between text-sm text-slate-500">
+            <p>© 2026 VerificaNews. Todos os direitos reservados.</p>
+            <p>Hospedado na Vercel com triagem via Gemini API.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL: Enviar para Checagem com IA -->
+    <div id="submitModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-blue-600"></i>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white">Checagem Instantânea com IA</h3>
+                </div>
+                <button onclick="toggleModal('submitModal', false)" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="claimForm" onsubmit="handleClaimSubmit(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Notícia ou Afirmação Suspeita *</label>
+                    <textarea id="formClaim" required rows="3" placeholder="Cole aqui o título, mensagem de WhatsApp ou boato que deseja checar..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Link / Fonte Original (Opcional)</label>
+                    <input type="url" id="formLink" placeholder="https://site.com/noticia-duvidosa" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm">
+                </div>
+
+                <div class="pt-2 flex justify-end space-x-3">
+                    <button type="button" onclick="toggleModal('submitModal', false)" class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 text-sm">Cancelar</button>
+                    <button type="submit" id="submitBtn" class="flex items-center space-x-2 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-md">
+                        <i data-lucide="bot" class="w-4 h-4"></i>
+                        <span>Analisar com IA</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Detalhes do Fato -->
+    <div id="detailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <span id="modalBadge" class="px-3 py-1 rounded-full text-xs font-bold uppercase">Status</span>
+                <button onclick="toggleModal('detailModal', false)" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
+                <div>
+                    <div class="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1" id="modalCategory">CATEGORIA</div>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white" id="modalTitle">Título da Afirmação</h2>
+                    <p class="text-xs text-slate-500 mt-2" id="modalMeta">Por Autor • Data</p>
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                    <h4 class="text-xs font-bold uppercase text-slate-400">Veredito / Análise</h4>
+                    <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed" id="modalVerdict">Explicação</p>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold uppercase text-slate-400 mb-2">Fontes Consultadas</h4>
+                    <ul class="space-y-2" id="modalSources"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 hidden flex items-center space-x-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700">
+        <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+        <span id="toastMsg" class="text-sm font-medium">Ação realizada!</span>
+    </div>
+
+    <script>
+        // Banco de Dados Inicial
+        let claimsData = [
+            {
+                id: "1",
+                title: "Governo anunciou fim definitivo dos impostos sobre medicamentos essenciais no próximo mês.",
+                author: "Redes Sociais",
+                date: "2026-10-20",
+                category: "Política",
+                status: "Falso",
+                verdict: "Não há lei ou decreto sancionado isentando 100% dos impostos sobre medicamentos no curto prazo.",
+                sources: [{ name: "Ministério da Fazenda", url: "https://exemplo.com" }]
+            },
+            {
+                id: "2",
+                title: "Consumo diário de café reduz risco de complicações cardíacas segundo estudos.",
+                author: "Artigo de Saúde",
+                date: "2026-10-18",
+                category: "Saúde",
+                status: "Parcial",
+                verdict: "Estudos mostram associação positiva com o consumo moderado, mas fatores genéticos influenciam.",
+                sources: [{ name: "OMS", url: "https://exemplo.com" }]
+            }
+        ];
+
+        let selectedCategory = 'Todos';
+        let searchQuery = '';
+        let selectedStatus = 'Todos';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderClaims();
+            updateStats();
+        });
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function renderClaims() {
+            const grid = document.getElementById('claimsGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            const filtered = claimsData.filter(claim => {
+                const matchesCat = selectedCategory === 'Todos' || claim.category === selectedCategory;
+                const matchesStatus = selectedStatus === 'Todos' || claim.status === selectedStatus;
+                const matchesSearch = claim.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      claim.verdict.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesCat && matchesStatus && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                filtered.forEach(claim => grid.appendChild(createClaimCard(claim)));
+            }
+
+            lucide.createIcons();
+        }
+
+        function createClaimCard(claim) {
+            const card = document.createElement('div');
+            card.className = "bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 transition-all shadow-sm hover:shadow-xl flex flex-col justify-between overflow-hidden cursor-pointer group";
+            card.onclick = () => openDetailModal(claim.id);
+
+            const badgeStyle = getStatusBadgeStyle(claim.status);
+
+            card.innerHTML = `
+                <div class="p-5 space-y-4">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">${claim.category}</span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase border ${badgeStyle}">${claim.status}</span>
+                    </div>
+                    <h3 class="font-bold text-slate-900 dark:text-white text-base group-hover:text-blue-600 transition line-clamp-3">"${claim.title}"</h3>
+                    <p class="text-xs text-slate-500 line-clamp-2">${claim.verdict}</p>
+                </div>
+                <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between text-xs text-slate-400">
+                    <span class="truncate max-w-[150px]">Fonte: ${claim.author}</span>
+                    <span class="flex items-center space-x-1 text-blue-600 font-medium">
+                        <span>Ver Fato</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </span>
+                </div>
+            `;
+            return card;
+        }
+
+        function getStatusBadgeStyle(status) {
+            switch(status) {
+                case 'Verdadeiro': return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 border-emerald-200';
+                case 'Falso': return 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 border-rose-200';
+                case 'Parcial': return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 border-amber-200';
+                default: return 'bg-slate-100 dark:bg-slate-800 text-slate-600 border-slate-300';
+            }
+        }
+
+        function setCategory(cat) {
+            selectedCategory = cat;
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.className = btn.dataset.category === cat 
+                    ? "category-btn active px-4 py-2 rounded-xl text-sm font-medium transition bg-blue-600 text-white"
+                    : "category-btn px-4 py-2 rounded-xl text-sm font-medium transition bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300";
+            });
+            renderClaims();
+        }
+
+        function handleFilterChange() {
+            searchQuery = document.getElementById('searchInput').value;
+            selectedStatus = document.getElementById('statusFilter').value;
+            renderClaims();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            handleFilterChange();
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = 'Todos';
+            selectedStatus = 'Todos';
+            searchQuery = '';
+            setCategory('Todos');
+        }
+
+        function updateStats() {
+            const counts = { Verdadeiro: 0, Falso: 0, Parcial: 0, "Sem Provas": 0 };
+            claimsData.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+            document.getElementById('countVerdadeiro').innerText = counts['Verdadeiro'];
+            document.getElementById('countFalso').innerText = counts['Falso'];
+            document.getElementById('countParcial').innerText = counts['Parcial'];
+            document.getElementById('countSemprovas').innerText = counts['Sem Provas'];
+        }
+
+        function toggleModal(modalId, show) {
+            document.getElementById(modalId).classList.toggle('hidden', !show);
+        }
+
+        function openDetailModal(id) {
+            const claim = claimsData.find(c => c.id === id);
+            if (!claim) return;
+
+            document.getElementById('modalCategory').innerText = claim.category.toUpperCase();
+            document.getElementById('modalTitle').innerText = `"${claim.title}"`;
+            document.getElementById('modalMeta').innerText = `Origem: ${claim.author} • ${claim.date}`;
+            document.getElementById('modalVerdict').innerText = claim.verdict;
+
+            const badge = document.getElementById('modalBadge');
+            badge.innerText = claim.status;
+            badge.className = `px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusBadgeStyle(claim.status)}`;
+
+            const sourcesList = document.getElementById('modalSources');
+            sourcesList.innerHTML = '';
+            if (claim.sources && claim.sources.length > 0) {
+                claim.sources.forEach(src => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="${src.url}" target="_blank" class="flex items-center space-x-2 text-sm text-blue-600 hover:underline"><i data-lucide="external-link" class="w-3.5 h-3.5"></i><span>${src.name}</span></a>`;
+                    sourcesList.appendChild(li);
+                });
+            } else {
+                sourcesList.innerHTML = `<span class="text-xs text-slate-400">Nenhuma fonte direta anexada.</span>`;
+            }
+
+            lucide.createIcons();
+            toggleModal('detailModal', true);
+        }
+
+        // Submissão via IA Gemini API (/api/check)
+        async function handleClaimSubmit(event) {
+            event.preventDefault();
+            
+            const claimText = document.getElementById('formClaim').value;
+            const sourceUrl = document.getElementById('formLink').value;
+            const submitBtn = document.getElementById('submitBtn');
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Analisando com IA...</span>`;
+            lucide.createIcons();
+
+            try {
+                const response = await fetch('/api/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ claimText, sourceUrl })
+                });
+
+                const aiResult = await response.json();
+
+                if (response.ok) {
+                    const newClaim = {
+                        id: Date.now().toString(),
+                        title: claimText,
+                        category: aiResult.category || "Geral",
+                        author: "Triagem Gemini IA",
+                        date: new Date().toISOString().split('T')[0],
+                        status: aiResult.status || "Sem Provas",
+                        verdict: aiResult.verdict,
+                        sources: aiResult.suggested_sources || []
+                    };
+
+                    claimsData.unshift(newClaim);
+                    renderClaims();
+                    updateStats();
+
+                    document.getElementById('claimForm').reset();
+                    toggleModal('submitModal', false);
+                    showToast('Notícia analisada com sucesso pela IA!');
+                } else {
+                    alert('Aviso: ' + (aiResult.error || 'Erro ao conectar à IA'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro de conexão ao endpoint de triagem por IA.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i data-lucide="bot" class="w-4 h-4"></i><span>Analisar com IA</span>`;
+                lucide.createIcons();
+            }
+        }
+
+        // Sincronização via Coletor Automático (/api/collect)
+        async function runAutoCollector() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('animate-spin');
+
+            try {
+                const response = await fetch('/api/collect');
+                const result = await response.json();
+
+                if (response.ok && result.data) {
+                    result.data.forEach(item => {
+                        if (!claimsData.some(c => c.title === item.title)) {
+                            claimsData.unshift(item);
+                        }
+                    });
+                    renderClaims();
+                    updateStats();
+                    showToast(`${result.count} novas notícias importadas do feed!`);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Erro ao sincronizar feed automático.');
+            } finally {
+                icon.classList.remove('animate-spin');
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+    </script>
+</body>
+</html>
